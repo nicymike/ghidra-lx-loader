@@ -34,6 +34,17 @@ Optionally, various options can be specified individually for each file:
 * Various files compiled with Open Watcom (DOS32A LE)
 * Random VxD files
 
+## Building
+
+Maven and a Ghidra installation are needed (default `/opt/ghidra`):
+
+```
+mvn package -Dghidra.install.dir=/path/to/ghidra
+```
+
+The extension zip is created in `target/`. `mvn test` runs the unit tests. To build against another Ghidra version, also pass
+`-Dghidra.version=<version>` and `-Dmaven.compiler.release=<java version of that Ghidra>`.
+
 ## Extra
 
 ![Options](data/options.png)

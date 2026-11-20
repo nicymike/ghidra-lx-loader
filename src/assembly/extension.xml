@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 http://maven.apache.org/xsd/assembly-2.2.0.xsd">
+    <!-- Ghidra extension: zip with one root folder containing extension.properties, lib/<jar>, data/, ghidra_scripts/ ... -->
+    <id>extension</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <files>
+        <!-- extension.properties with replaced placeholders (@extversion@, @extname@) -->
+        <file>
+            <source>extension.properties</source>
+            <outputDirectory>${project.artifactId}</outputDirectory>
+            <filtered>true</filtered>
+        </file>
+        <!-- The built jar of the extension -->
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}.jar</source>
+            <outputDirectory>${project.artifactId}/lib</outputDirectory>
+        </file>
+    </files>
+    <fileSets>
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <outputDirectory>${project.artifactId}</outputDirectory>
+            <includes>
+                <include>Module.manifest</include>
+                <include>README.md</include>
+                <include>LICENSE</include>
+                <include>data/**</include>
+                <include>lib/**</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+</assembly>
