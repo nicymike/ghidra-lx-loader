@@ -24,6 +24,29 @@ public class ObjectTableEntry extends LinearObjectTableEntry {
 		reader.setPointerIndex(oldIndex);
 	}
 	
+	public boolean isReadable() {
+		return (flags & FLAG_READABLE) != 0;
+	}
+	
+	public boolean isWritable() {
+		return (flags & FLAG_WRITEABLE) != 0;
+	}
+	
+	public boolean isExecutable() {
+		return (flags & FLAG_EXECUTABLE) != 0;
+	}
+	
+	/**
+	 * Big default bit: the code of the object is 32-bit (otherwise 16-bit).
+	 */
+	public boolean isBig() {
+		return (flags & FLAG_BIG_DEFAULT_BIT) != 0;
+	}
+	
+	public boolean hasPermissionFlags() {
+		return (flags & (FLAG_READABLE | FLAG_WRITEABLE | FLAG_EXECUTABLE)) != 0;
+	}
+	
 	public String getPermissionFlagsLabel() {
 		return String.format(
 			"%s%s%s",
@@ -47,4 +70,4 @@ public class ObjectTableEntry extends LinearObjectTableEntry {
 		}
 		return String.format("%04x (%s)", flags, String.join(", ", f));
 	}
-}
+}

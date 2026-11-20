@@ -54,10 +54,18 @@ public class LeLoader extends LinearLoader {
         			// Done walking BW headers
         		}
         		
+        		if (secondaryOffset < 0 || secondaryOffset + DOSHeader.SIZEOF_DOS_HEADER > reader.length()) {
+        			// Normal DOS exe without further header
+        			throw new InvalidHeaderException("No secondary header");
+        		}
         		reader.setPointerIndex(secondaryOffset);
         		var dos2 = DOSHeader.createDOSHeader(reader);
         		lfanew = secondaryOffset + dos2.e_lfanew();
         	}
+        }
+        
+        if (lfanew < 0 || lfanew + 2 > reader.length()) {
+        	throw new InvalidHeaderException("Header offset outside of file");
         }
         
         // Try parsing LX Header
@@ -74,7 +82,7 @@ public class LeLoader extends LinearLoader {
 	
 	@Override
 	public void onLoadSuccess(Program program) {
-		Msg.info(this, String.format("Succesfully loaded %s (LE-Style)", program.getDomainFile()));
+		Msg.info(this, String.format("Successfully loaded %s (LE-Style)", program.getDomainFile()));
 	}
 	
 }

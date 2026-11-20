@@ -33,12 +33,15 @@ public class VxDLoader extends LinearLoader {
 	public void checkFormat(BinaryReader reader) throws IOException, InvalidHeaderException {
 		// Try parsing MZ header
         var mzHeader = new DOSHeader(reader);
-        var lfanew = 0;
+        long lfanew = 0;
         if (mzHeader.isDosSignature()) {
         	 lfanew = mzHeader.e_lfanew();
         }
+        if (lfanew < 0 || lfanew + 2 > reader.length()) {
+        	throw new InvalidHeaderException("Header offset outside of file");
+        }
         // Try parsing LX Header
-    	var header = new Header(reader, (short) lfanew);
+    	var header = new Header(reader, lfanew);
     	if (!header.isVxD()) {
     		throw new InvalidHeaderException("Not VxD LE-Style");
     	}
@@ -46,6 +49,6 @@ public class VxDLoader extends LinearLoader {
 
 	@Override
 	public void onLoadSuccess(Program program) {
-		Msg.info(this, String.format("Succesfully loaded %s (VxD LE-Style)", program.getDomainFile()));
+		Msg.info(this, String.format("Successfully loaded %s (VxD LE-Style)", program.getDomainFile()));
 	}
 }

@@ -25,7 +25,6 @@ public class Options {
 	public final static String OPTION_RELOCATION_TABLE_DISABLE = "Deactivate import of fixup into Ghidra relocation table";
 	
 	
-	public final static String OPTION_FIXUP_ENABLE_0 = "Apply byte fixups";
 	public final static String OPTION_FIXUP_ENABLE_2 = "Apply 16-bit selector fixups";
 	public final static String OPTION_FIXUP_ENABLE_3 = "Apply pointer 16:16 fixups";
 	public final static String OPTION_FIXUP_ENABLE_5 = "Apply 16-bit offset fixups";
@@ -57,7 +56,6 @@ public class Options {
 	
 	public Options() {
 		var prefs = Preferences.userRoot().node(this.getClass().getName());
-		enableType[0] = prefs.getBoolean(OPTION_FIXUP_ENABLE_0, true);
 		enableType[2] = prefs.getBoolean(OPTION_FIXUP_ENABLE_2, true);
 		enableType[3] = prefs.getBoolean(OPTION_FIXUP_ENABLE_3, true);
 		enableType[5] = prefs.getBoolean(OPTION_FIXUP_ENABLE_5, true);
@@ -72,18 +70,20 @@ public class Options {
 		createPageLabels = prefs.getBoolean(OPTION_PAGE_LABELS, createPageLabels);
 		createFixupLabels = prefs.getBoolean(OPTION_FIXUP_LABELS, createFixupLabels);
 		relocationTableDisabled = prefs.getBoolean(OPTION_RELOCATION_TABLE_DISABLE, relocationTableDisabled);
-		parseBaseAddresses(prefs.get(OPTION_OVERRIDE_ADDRESSES, ""));
-		parseSelectors(prefs.get(OPTION_OVERRIDE_SELECTORS, ""));
+		// The stored values were validated when they were saved, but the preferences can be edited by hand
+		baseAddresses = parseHexListOrEmpty(prefs.get(OPTION_OVERRIDE_ADDRESSES, ""));
+		selectors = parseHexListOrEmpty(prefs.get(OPTION_OVERRIDE_SELECTORS, ""));
 	}
 	
 	public boolean fixupEnabled(FixupRecord r) {
-		return enableType[r.getSourceType()];
+		var type = r.getSourceType();
+		return type < enableType.length && enableType[type];
 	}
 	
 	public int getBaseAddress(LinearObjectTableEntry object) {
-		var customBase = getBaseAddress(object.number);
-		// base address overriden in options?
-		if (customBase > 0) {
+		var customBase = getBaseOverride(object.number);
+		// base address overridden in options? (0 means "not set"; addresses from 0x80000000 on are negative ints)
+		if (customBase != 0) {
 			return customBase;
 		}
 		// no base address? -> map along based on object numbers
@@ -94,7 +94,11 @@ public class Options {
 		return object.base;
 	}
 	
-	public int getBaseAddress(int number) {
+	/**
+	 * @return the base address entered in the options for this object number, or 0 if there is none. This is
+	 *         not the address the object is mapped at, use {@link #getBaseAddress(LinearObjectTableEntry)} for that.
+	 */
+	public int getBaseOverride(int number) {
 		var index = number - 1;
 		if (baseAddresses != null && baseAddresses.length > index) {
 			if (baseAddresses[index] != 0) {
@@ -143,7 +147,6 @@ public class Options {
 		list.add(new Option(GROUP_IMAGE_MAPPING, OPTION_MAP_EXTRA, prefs.getBoolean(OPTION_MAP_EXTRA, mapExtra)));
 		list.add(new Option(GROUP_IMAGE_MAPPING, OPTION_PAGE_LABELS, prefs.getBoolean(OPTION_PAGE_LABELS, createPageLabels)));
 		list.add(new Option(GROUP_IMAGE_MAPPING, OPTION_FIXUP_LABELS, prefs.getBoolean(OPTION_FIXUP_LABELS, createFixupLabels)));
-		list.add(new Option(GROUP_FIXUPS, OPTION_FIXUP_ENABLE_0, prefs.getBoolean(OPTION_FIXUP_ENABLE_0, enableType[0])));
 		list.add(new Option(GROUP_FIXUPS, OPTION_FIXUP_ENABLE_2, prefs.getBoolean(OPTION_FIXUP_ENABLE_2, enableType[2])));
 		list.add(new Option(GROUP_FIXUPS, OPTION_FIXUP_ENABLE_3, prefs.getBoolean(OPTION_FIXUP_ENABLE_3, enableType[3])));
 		list.add(new Option(GROUP_FIXUPS, OPTION_FIXUP_ENABLE_5, prefs.getBoolean(OPTION_FIXUP_ENABLE_5, enableType[5])));
@@ -155,7 +158,27 @@ public class Options {
 		return list;
 	}
 	
-	public void validateOptions(ByteProvider provider, LoadSpec loadSpec, List<Option> options, Program program) {
+	/**
+	 * Applies the options and remembers them in the preferences.
+	 * 
+	 * @return an error message if an option is invalid (nothing is changed in this case), otherwise null
+	 */
+	public String validateOptions(ByteProvider provider, LoadSpec loadSpec, List<Option> options, Program program) {
+		// Parse the lists first: invalid input must not be stored, otherwise it would break every later start
+		int[] newBaseAddresses = null;
+		int[] newSelectors = null;
+		for (var option : options) {
+			try {
+				if (option.getName().equals(OPTION_OVERRIDE_ADDRESSES)) {
+					newBaseAddresses = parseHexList(option.getValue().toString());
+				} else if (option.getName().equals(OPTION_OVERRIDE_SELECTORS)) {
+					newSelectors = parseHexList(option.getValue().toString());
+				}
+			} catch (NumberFormatException e) {
+				return String.format("Invalid value for '%s': %s (expected a comma-separated list of hex values)", option.getName(), e.getMessage());
+			}
+		}
+		
 		var prefs = Preferences.userRoot().node(this.getClass().getName());
 		for (Option option : options) {
 			if (option.getName().equals(OPTION_MAP_EXTRA)) {
@@ -176,9 +199,6 @@ public class Options {
 			} else if (option.getName().equals(OPTION_LOG_FIXUP_STATS)) {
 				logFixupStats = Boolean.parseBoolean(option.getValue().toString());
 				prefs.putBoolean(OPTION_LOG_FIXUP_STATS, Boolean.parseBoolean(option.getValue().toString()));
-			} else if (option.getName().equals(OPTION_FIXUP_ENABLE_0)) {
-				enableType[0] = Boolean.parseBoolean(option.getValue().toString());
-				prefs.putBoolean(OPTION_FIXUP_ENABLE_0, Boolean.parseBoolean(option.getValue().toString()));
 			} else if (option.getName().equals(OPTION_FIXUP_ENABLE_2)) {
 				enableType[2] = Boolean.parseBoolean(option.getValue().toString());
 				prefs.putBoolean(OPTION_FIXUP_ENABLE_2, Boolean.parseBoolean(option.getValue().toString()));
@@ -208,44 +228,41 @@ public class Options {
 		
 		for (var option : options) {
 			if (option.getName().equals(OPTION_OVERRIDE_ADDRESSES)) {
-				String value = option.getValue().toString();
-				prefs.put(OPTION_OVERRIDE_ADDRESSES, value);
-				parseBaseAddresses(value);
+				prefs.put(OPTION_OVERRIDE_ADDRESSES, option.getValue().toString());
+				baseAddresses = newBaseAddresses;
 			} else if (option.getName().equals(OPTION_OVERRIDE_SELECTORS)) {
-				String value = option.getValue().toString();
-				prefs.put(OPTION_OVERRIDE_SELECTORS, value);
-				parseSelectors(value);
+				prefs.put(OPTION_OVERRIDE_SELECTORS, option.getValue().toString());
+				selectors = newSelectors;
 			}
+		}
+		return null;
+	}
+	
+	private static int[] parseHexListOrEmpty(String value) {
+		try {
+			return parseHexList(value);
+		} catch (NumberFormatException e) {
+			return new int[0];
 		}
 	}
 	
-	private void parseBaseAddresses(String value) {
-		String[] addresses = value.split(",");
-		baseAddresses = new int[addresses.length];
-		for (int i = 0; i < addresses.length; i++) {
+	/**
+	 * Parses a comma-separated list of hex values (with or without 0x prefix). Empty entries become 0 
+	 * (meaning "no override"). Values up to 0xFFFFFFFF are accepted.
+	 * 
+	 * @throws NumberFormatException if an entry is not a hex number
+	 */
+	static int[] parseHexList(String value) {
+		String[] entries = value.split(",", -1);
+		int[] result = new int[entries.length];
+		for (int i = 0; i < entries.length; i++) {
 			// See issue #9
-			String addr = addresses[i].strip();
-			addr = addr.replaceAll("0x", "");
-			if (addr.length() > 0) {
-				baseAddresses[i] = Integer.parseInt(addr, 16);	
-			} else {
-				baseAddresses[i] = 0;
+			String entry = entries[i].strip();
+			if (entry.startsWith("0x") || entry.startsWith("0X")) {
+				entry = entry.substring(2);
 			}
+			result[i] = entry.isEmpty() ? 0 : Integer.parseUnsignedInt(entry, 16);
 		}
-	}
-	
-	private void parseSelectors(String value) {
-		String[] values = value.split(",");
-		selectors = new int[values.length];
-		for (int i = 0; i < values.length; i++) {
-			// See issue #9
-			String v = values[i].strip();
-			v = v.replaceAll("0x", "");
-			if (v.length() > 0) {
-				selectors[i] = Integer.parseInt(v, 16);	
-			} else {
-				selectors[i] = 0;
-			}
-		}
+		return result;
 	}
 }

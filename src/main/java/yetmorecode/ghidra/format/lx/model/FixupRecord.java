@@ -3,6 +3,8 @@ package yetmorecode.ghidra.format.lx.model;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import ghidra.app.util.bin.BinaryReader;
 import ghidra.app.util.bin.StructConverter;
 import ghidra.program.model.data.ArrayDataType;
@@ -53,18 +55,19 @@ public class FixupRecord extends LinearFixupRecord implements StructConverter {
 	
 	private StructureDataType dt;
 	
-	public FixupRecord(BinaryReader reader, long l, int number, int baseAddress, int page) throws IOException {
+	public FixupRecord(BinaryReader reader, long l, int number, int baseAddress, int page, int pageSize) throws IOException {
 		var oldIndex = reader.getPointerIndex();
 		reader.setPointerIndex(l);
 		index = number;
-		this.pageAddress = baseAddress + page * 0x1000;
+		this.pageAddress = baseAddress + page * pageSize;
 		
 		sourceType = reader.readNextByte();
 		targetFlags = reader.readNextByte();
 		size = 2;
 		// source data
 		if (hasSourceList()) {
-			sourceCount = reader.readNextByte();
+			// The count is an unsigned byte (up to 255 sources)
+			sourceCount = reader.readNextByte() & 0xff;
 			size++;
 		} else {
 			ByteBuffer bb = ByteBuffer.allocate(2);
@@ -119,16 +122,9 @@ public class FixupRecord extends LinearFixupRecord implements StructConverter {
 				}
 			}
 		} else if ((targetFlags & TARGET_TYPE_MASK) == TARGET_IMPORT_ORDINAL) {
-			if ((targetFlags & TARGET_16BIT_OBJECT) > 0) {
-				ordinalIndex = reader.readNextShort();
-				fixupSize = 2;
-				size += 2;
-			} else {
-				ordinalIndex = reader.readNextByte();
-				fixupSize = 1;
-				size++;
-			}
-			if ((targetFlags & TARGET_8BIT_ORDINAL) > 0) {
+			// The module number (or entry ordinal) was already read as objectNumber above (1 or 2 bytes)
+			ordinalIndex = objectNumber;
+			if ((targetFlags & TARGET_8BIT_ORDINAL) != 0) {
 				ordinalNumber = reader.readNextByte();
 				fixupSize = 1;
 				size++;
@@ -151,15 +147,8 @@ public class FixupRecord extends LinearFixupRecord implements StructConverter {
 				}
 			}
 		} else if ((targetFlags & TARGET_TYPE_MASK) == TARGET_IMPORT_NAME) {
-			if ((targetFlags & TARGET_16BIT_OBJECT) > 0) {
-				ordinalIndex = reader.readNextShort();
-				fixupSize = 2;
-				size += 2;
-			} else {
-				ordinalIndex = reader.readNextByte();
-				fixupSize = 1;
-				size++;
-			}
+			// The module number (or entry ordinal) was already read as objectNumber above (1 or 2 bytes)
+			ordinalIndex = objectNumber;
 			if ((targetFlags & TARGET_32BIT_OFFSET) > 0) {
 				ordinalNumber = reader.readNextInt();
 				fixupSize = 2;
@@ -181,15 +170,8 @@ public class FixupRecord extends LinearFixupRecord implements StructConverter {
 				}
 			}
 		} else if ((targetFlags & TARGET_TYPE_MASK) == TARGET_IMPORT_ENTRY) {
-			if ((targetFlags & TARGET_16BIT_OBJECT) > 0) {
-				ordinalIndex = reader.readNextShort();
-				fixupSize = 2;
-				size += 2;
-			} else {
-				ordinalIndex = reader.readNextByte();
-				fixupSize = 1;
-				size++;
-			}
+			// The module number (or entry ordinal) was already read as objectNumber above (1 or 2 bytes)
+			ordinalIndex = objectNumber;
 			if ((targetFlags & TARGET_ADDITIVE_FIXUP) > 0) {
 				if ((targetFlags & TARGET_32BIT_ADDITIVE) > 0) {
 					additive = reader.readNextInt();
@@ -214,6 +196,47 @@ public class FixupRecord extends LinearFixupRecord implements StructConverter {
 		reader.setPointerIndex(oldIndex);
 	}
 	
+	/**
+	 * Copy for exactly one source of a source list fixup. The copy has no data type (it is not a
+	 * separate record in the file) and no longer has the source list flag.
+	 */
+	private FixupRecord(FixupRecord other, short sourceOffset) {
+		this.sourceType = (byte) (other.sourceType & ~SOURCE_SOURCE_LIST);
+		this.targetFlags = other.targetFlags;
+		this.objectNumber = other.objectNumber;
+		this.targetOffset = other.targetOffset;
+		this.ordinalIndex = other.ordinalIndex;
+		this.ordinalNumber = other.ordinalNumber;
+		this.additive = other.additive;
+		this.index = other.index;
+		this.size = other.size;
+		this.fixupSize = other.fixupSize;
+		this.pageAddress = other.pageAddress;
+		this.sourceOffset = sourceOffset;
+	}
+	
+	/**
+	 * Returns the individual fixups this record describes: a normal record yields itself, a source
+	 * list record yields one fixup per entry of the list, each with its own source offset.
+	 */
+	public List<FixupRecord> getSourceRecords() {
+		if (!hasSourceList()) {
+			return List.of(this);
+		}
+		var records = new ArrayList<FixupRecord>();
+		for (var offset : sourceList) {
+			records.add(new FixupRecord(this, offset));
+		}
+		return records;
+	}
+	
+	/**
+	 * @return true if the target is an object of this module (only then are object number and target offset valid)
+	 */
+	public boolean hasInternalObjectTarget() {
+		return isInternalTarget();
+	}
+	
 	public int getSourceAddress() {
 		return pageAddress + sourceOffset;
 	}
@@ -224,6 +247,10 @@ public class FixupRecord extends LinearFixupRecord implements StructConverter {
 	}
 	
 	public String shortname() {
-		return shortnames[getSourceType()];
+		var type = getSourceType();
+		if (type < shortnames.length) {
+			return shortnames[type];
+		}
+		return "inv" + type;
 	}
 }

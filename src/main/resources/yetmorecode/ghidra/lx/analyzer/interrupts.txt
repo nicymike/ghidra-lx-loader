@@ -1,0 +1,239 @@
+# Names of interrupt functions for the interrupt annotator.
+#
+# Format (fields separated by spaces, the rest of the line is the name):
+#   <interrupt hex> *         <name of the interrupt>
+#   <interrupt hex> AH=<hh>   <name of the function>   (function identified by AH only)
+#   <interrupt hex> AX=<hhhh> <name of the function>   (function identified by AX, takes precedence over AH)
+#
+# Only add verified entries. Sources: general DOS/DPMI/VESA functions from the usual references,
+# DOS/32A functions and names from the DOS/32A documentation (Programmer's Reference).
+# Unknown functions (e.g. INT 21h AH=ED, INT 2Fh AX=FA1F) are neither documented there nor in the source
+# code of DOS/32A and are therefore not named.
+
+# --- INT 10h: video BIOS / VESA ---
+10 *      Video BIOS
+10 AH=00  Video: Set Video Mode
+10 AH=01  Video: Set Cursor Shape
+10 AH=02  Video: Set Cursor Position
+10 AH=03  Video: Get Cursor Position
+10 AH=05  Video: Select Active Display Page
+10 AH=06  Video: Scroll Window Up
+10 AH=07  Video: Scroll Window Down
+10 AH=08  Video: Read Character and Attribute
+10 AH=09  Video: Write Character and Attribute
+10 AH=0A  Video: Write Character
+10 AH=0B  Video: Set Color Palette / Border
+10 AH=0C  Video: Write Pixel
+10 AH=0D  Video: Read Pixel
+10 AH=0E  Video: Teletype Output
+10 AH=0F  Video: Get Current Video Mode
+10 AH=10  Video: Palette / DAC Functions
+10 AH=11  Video: Character Generator Functions
+10 AH=13  Video: Write String
+10 AH=1A  Video: Get/Set Display Combination Code
+10 AH=1B  Video: Read Functionality Information
+10 AH=1C  Video: Save/Restore VGA State
+10 AX=1010 Video: Set Individual DAC Register
+10 AX=1012 Video: Set Block of DAC Registers
+10 AX=1015 Video: Read Individual DAC Register
+10 AX=1017 Video: Read Block of DAC Registers
+10 AX=4F00 VESA: Return VBE Controller Information
+10 AX=4F01 VESA: Return VBE Mode Information
+10 AX=4F02 VESA: Set VBE Mode
+10 AX=4F03 VESA: Return Current VBE Mode
+10 AX=4F04 VESA: Save/Restore State
+10 AX=4F05 VESA: Display Window Control (Bank Switching)
+10 AX=4F06 VESA: Set/Get Logical Scan Line Length
+10 AX=4F07 VESA: Set/Get Display Start
+10 AX=4F08 VESA: Set/Get DAC Palette Format
+10 AX=4F09 VESA: Set/Get Palette Data
+10 AX=4F0A VESA: Return VBE Protected Mode Interface
+
+# --- INT 16h: keyboard BIOS ---
+16 *      Keyboard BIOS
+16 AH=00  Keyboard: Get Keystroke
+16 AH=01  Keyboard: Check for Keystroke
+16 AH=02  Keyboard: Get Shift Flags
+16 AH=05  Keyboard: Store Keystroke
+16 AH=10  Keyboard: Get Enhanced Keystroke
+16 AH=11  Keyboard: Check Enhanced Keystroke
+16 AH=12  Keyboard: Get Extended Shift Flags
+
+# --- INT 21h: DOS ---
+21 *      DOS
+21 AH=01  DOS: Read Character with Echo
+21 AH=02  DOS: Write Character
+21 AH=06  DOS: Direct Console I/O
+21 AH=07  DOS: Direct Character Input without Echo
+21 AH=08  DOS: Character Input without Echo
+21 AH=09  DOS: Write String ($-terminated)
+21 AH=0A  DOS: Buffered Input
+21 AH=0B  DOS: Check Input Status
+21 AH=0C  DOS: Flush Input Buffer and Read
+21 AH=0D  DOS: Disk Reset
+21 AH=0E  DOS: Select Default Drive
+21 AH=19  DOS: Get Current Default Drive
+21 AH=1A  DOS: Set Disk Transfer Area (DTA)
+21 AH=1B  DOS: Get Default Drive Information
+21 AH=1C  DOS: Get Specific Drive Information
+21 AH=1F  DOS: Get Default Drive Parameter Block (DPB)
+21 AH=25  DOS: Set Interrupt Vector
+21 AH=2A  DOS: Get Date
+21 AH=2B  DOS: Set Date
+21 AH=2C  DOS: Get Time
+21 AH=2D  DOS: Set Time
+21 AH=2F  DOS: Get Disk Transfer Area (DTA)
+21 AH=30  DOS: Get DOS Version
+21 AH=31  DOS: Terminate and Stay Resident
+21 AH=32  DOS: Get Specific Drive Parameter Block (DPB)
+21 AH=33  DOS: Get/Set Ctrl-Break Flag
+21 AH=34  DOS: Get InDOS Flag Address
+21 AH=35  DOS: Get Interrupt Vector
+21 AH=36  DOS: Get Free Disk Space
+21 AH=38  DOS: Get/Set Country Information
+21 AH=39  DOS: Create Directory
+21 AH=3A  DOS: Remove Directory
+21 AH=3B  DOS: Change Directory
+21 AH=3C  DOS: Create File
+21 AH=3D  DOS: Open File
+21 AH=3E  DOS: Close File
+21 AH=3F  DOS: Read File
+21 AH=40  DOS: Write File
+21 AH=41  DOS: Delete File
+21 AH=42  DOS: Seek in File
+21 AH=43  DOS: Get/Set File Attributes
+21 AH=44  DOS: IOCTL
+21 AH=45  DOS: Duplicate Handle
+21 AH=46  DOS: Force Duplicate Handle
+21 AH=47  DOS: Get Current Directory
+21 AH=48  DOS: Allocate Memory
+21 AH=49  DOS: Free Memory
+21 AH=4A  DOS: Resize Memory Block
+21 AH=4B  DOS: Execute Program (EXEC)
+21 AH=4C  DOS: Terminate Program
+21 AH=4D  DOS: Get Return Code of Child
+21 AH=4E  DOS: Find First File
+21 AH=4F  DOS: Find Next File
+21 AH=51  DOS: Get PSP Segment
+21 AH=56  DOS: Rename File
+21 AH=57  DOS: Get/Set File Date and Time
+21 AH=5A  DOS: Create Temporary File
+21 AH=5B  DOS: Create New File
+21 AH=62  DOS: Get PSP Selector
+21 AH=67  DOS: Set Handle Count
+21 AH=68  DOS: Commit File
+21 AX=7139 DOS: Win95 LFN Create Directory
+21 AX=713A DOS: Win95 LFN Remove Directory
+21 AX=713B DOS: Win95 LFN Change Directory
+21 AX=7141 DOS: Win95 LFN Delete File
+21 AX=7143 DOS: Win95 LFN Get/Set File Attributes
+21 AX=7147 DOS: Win95 LFN Get Current Directory
+21 AX=7156 DOS: Win95 LFN Rename File
+21 AX=7160 DOS: Win95 LFN Get File True Name
+21 AX=716C DOS: Win95 LFN Create/Open File
+
+# --- INT 21h: DOS/4G(W) and DOS/32A (not in plain DOS) ---
+21 AX=FF00 DOS/4G(W) + DOS/32A: Identification Call
+21 AX=FF80 DOS/32A: Magic Function (Write Formatted String)
+21 AX=FF88 DOS/32A: Identification Call
+21 AX=FF89 DOS/32A: Get Configuration Info
+21 AX=FF8A DOS/32A: Get ADPMI Configuration Info
+21 AX=FF90 DOS/32A: Get Free High Memory Info
+21 AX=FF91 DOS/32A: Allocate High Memory Block
+21 AX=FF92 DOS/32A: Free High Memory Block
+21 AX=FF93 DOS/32A: Resize High Memory Block
+21 AX=FF94 DOS/32A: Get Free Low Memory Info
+21 AX=FF95 DOS/32A: Allocate Low Memory Block
+21 AX=FF96 DOS/32A: Free Low Memory Block
+21 AX=FF97 DOS/32A: Resize Low Memory Block
+21 AX=FF98 DOS/32A: Map Physical Memory
+21 AX=FF99 DOS/32A: Unmap Physical Memory
+21 AX=FF9A DOS/32A: Allocate Selector
+
+# --- INT 2Fh: Multiplex ---
+2F *      Multiplex
+2F AX=1600 Multiplex: Enhanced Windows Installation Check
+2F AX=1687 Multiplex: DPMI Installation Check / Get Mode Switch Entry Point
+2F AX=4300 Multiplex: XMS Installation Check
+2F AX=4310 Multiplex: Get XMS Driver Address
+
+# --- INT 31h: DPMI 0.9 ---
+31 *      DPMI
+31 AX=0000 DPMI: Allocate Descriptors
+31 AX=0001 DPMI: Free Descriptor
+31 AX=0002 DPMI: Map Segment to Descriptor
+31 AX=0003 DPMI: Get Selector Increment Value
+31 AX=0006 DPMI: Get Segment Base Address
+31 AX=0007 DPMI: Set Segment Base Address
+31 AX=0008 DPMI: Set Segment Limit
+31 AX=0009 DPMI: Set Descriptor Access Rights
+31 AX=000A DPMI: Create Alias Descriptor
+31 AX=000B DPMI: Get Descriptor
+31 AX=000C DPMI: Set Descriptor
+31 AX=000D DPMI: Allocate Specific LDT Descriptor
+31 AX=000E DPMI: Get Multiple Descriptors
+31 AX=000F DPMI: Set Multiple Descriptors
+31 AX=0100 DPMI: Allocate DOS Memory Block
+31 AX=0101 DPMI: Deallocate DOS Memory Block
+31 AX=0102 DPMI: Resize DOS Memory Block
+31 AX=0200 DPMI: Get Real Mode Interrupt Vector
+31 AX=0201 DPMI: Set Real Mode Interrupt Vector
+31 AX=0202 DPMI: Get Processor Exception Handler Vector
+31 AX=0203 DPMI: Set Processor Exception Handler Vector
+31 AX=0204 DPMI: Get Protected Mode Interrupt Vector
+31 AX=0205 DPMI: Set Protected Mode Interrupt Vector
+31 AX=0300 DPMI: Simulate Real Mode Interrupt
+31 AX=0301 DPMI: Call Real Mode Procedure with RETF Frame
+31 AX=0302 DPMI: Call Real Mode Procedure with IRET Frame
+31 AX=0303 DPMI: Allocate Real Mode Callback Address
+31 AX=0304 DPMI: Free Real Mode Callback Address
+31 AX=0305 DPMI: Get State Save/Restore Addresses
+31 AX=0306 DPMI: Get Raw Mode Switch Addresses
+31 AX=0400 DPMI: Get DPMI Version
+31 AX=0500 DPMI: Get Free Memory Information
+31 AX=0501 DPMI: Allocate Memory Block
+31 AX=0502 DPMI: Free Memory Block
+31 AX=0503 DPMI: Resize Memory Block
+31 AX=050A DPMI: Get Memory Block Size and Base
+31 AX=0600 DPMI: Lock Linear Region
+31 AX=0601 DPMI: Unlock Linear Region
+31 AX=0602 DPMI: Mark Real Mode Region as Pageable
+31 AX=0603 DPMI: Relock Real Mode Region
+31 AX=0604 DPMI: Get Page Size
+31 AX=0702 DPMI: Mark Page as Demand Paging Candidate
+31 AX=0703 DPMI: Discard Page Contents
+31 AX=0800 DPMI: Physical Address Mapping
+31 AX=0801 DPMI: Free Physical Address Mapping
+31 AX=0900 DPMI: Get and Disable Virtual Interrupt State
+31 AX=0901 DPMI: Get and Enable Virtual Interrupt State
+31 AX=0902 DPMI: Get Virtual Interrupt State
+31 AX=0A00 DPMI: Get Vendor-Specific API Entry Point
+31 AX=0B00 DPMI: Set Debug Watchpoint
+31 AX=0B01 DPMI: Clear Debug Watchpoint
+31 AX=0B02 DPMI: Get State of Debug Watchpoint
+31 AX=0B03 DPMI: Reset Debug Watchpoint
+31 AX=0E00 DPMI: Get Coprocessor Status
+31 AX=0E01 DPMI: Set Coprocessor Emulation
+31 AX=EEFF DPMI: Get DOS Extender Info (PMODE/W compatible)
+
+# --- INT 33h: mouse ---
+33 *      Mouse
+33 AX=0000 Mouse: Reset Driver / Get Status
+33 AX=0001 Mouse: Show Cursor
+33 AX=0002 Mouse: Hide Cursor
+33 AX=0003 Mouse: Get Position and Button Status
+33 AX=0004 Mouse: Set Cursor Position
+33 AX=0005 Mouse: Get Button Press Data
+33 AX=0006 Mouse: Get Button Release Data
+33 AX=0007 Mouse: Set Horizontal Range
+33 AX=0008 Mouse: Set Vertical Range
+33 AX=0009 Mouse: Define Graphics Cursor
+33 AX=000B Mouse: Read Motion Counters
+33 AX=000C Mouse: Define Interrupt Subroutine Parameters
+33 AX=000F Mouse: Set Mickey/Pixel Ratio
+33 AX=0014 Mouse: Exchange Interrupt Subroutines
+33 AX=0016 Mouse: Save Driver State
+33 AX=0017 Mouse: Restore Driver State
+33 AX=0018 Mouse: Set Alternate Mouse User Handler
+33 AX=0019 Mouse: Return User Alternate Interrupt Handler
+33 AX=0020 Mouse: Enable Mouse Driver

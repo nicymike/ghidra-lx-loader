@@ -19,7 +19,7 @@ public class FixupSectionType extends StructureDataType {
 		super("IMAGE_LE_FIXUP", 0);
 		
 		var h = executable.header;
-		add(new ArrayDataType(StructConverter.DWORD, h.pageCount+1, 0), "fixup_page_table", 
+		add(new ArrayDataType(StructConverter.DWORD, executable.logicalPageCount+1, 0), "fixup_page_table", 
 			"The Fixup Page Table provides a simple mapping of a logical page number to an offset into "
 			+ "the Fixup Record Table for that page. "
 			+ "This table is parallel to the Object Page Table, except that there is one additional entry in this "
